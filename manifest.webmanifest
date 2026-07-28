@@ -1,9 +1,0 @@
-{
-  "name": "PHI Scrubber",
-  "short_name": "PHI Scrubber",
-  "description": "Local, offline protected health information detection and redaction.",
-  "start_url": "./",
-  "display": "standalone",
-  "background_color": "#f6f7f2",
-  "theme_color": "#176b57"
-}
