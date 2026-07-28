@@ -81,16 +81,20 @@
       const found=[];
       defs.forEach(([type,label,score,re])=>{
         re.lastIndex=0;
-        for(const m of text.matchAll(re)){
+        let m;
+        while((m=re.exec(text))!==null){
           if(type==="ZIP_CODE"&&!/\b(?:zip|postal|address|,\s*[A-Z]{2}\s*)/i.test(text.slice(Math.max(0,m.index-28),m.index+m[0].length+12)))continue;
           found.push({type,label,score,start:m.index,end:m.index+m[0].length,text:m[0]});
+          if(m[0]==="")re.lastIndex++;
         }
       });
       namePatterns.forEach(re=>{
         re.lastIndex=0;
-        for(const m of text.matchAll(re)){
+        let m;
+        while((m=re.exec(text))!==null){
           const value=m[1]; if(!value.split(/\s+/).every(p=>/^[A-Z]/.test(p)))continue;
           const start=m.index+m[0].lastIndexOf(value);found.push({type:"PERSON",label:"Person",score:.82,start,end:start+value.length,text:value});
+          if(m[0]==="")re.lastIndex++;
         }
       });
       const chosen=[];
@@ -114,9 +118,13 @@
       current=detect(source.value);output.textContent=source.value?redact(source.value,current,style.value):"No text to scrub.";output.classList.remove("empty");copy.disabled=!source.value;
       $("summary").textContent=current.length?`${current.length} identifier${current.length===1?"":"s"} scrubbed`:"No identifiers detected";
       findings.hidden=!current.length;$("total").textContent=`${current.length} total`;const grouped={};current.forEach(x=>grouped[x.label]=(grouped[x.label]||0)+1);
-      $("chips").replaceChildren(...Object.entries(grouped).map(([label,n])=>{const el=document.createElement("span");el.className="chip";el.textContent=`${label} · ${n}`;return el}));
+      const chips=$("chips");while(chips.firstChild)chips.removeChild(chips.firstChild);
+      Object.keys(grouped).forEach(label=>{const el=document.createElement("span");el.className="chip";el.textContent=`${label} · ${grouped[label]}`;chips.appendChild(el)});
     }
-    source.addEventListener("input",count);$("scrub").onclick=render;style.onchange=()=>source.value&&render();
+    let scanTimer;
+    source.addEventListener("input",()=>{count();clearTimeout(scanTimer);scanTimer=setTimeout(render,180)});
+    source.addEventListener("paste",()=>{clearTimeout(scanTimer);scanTimer=setTimeout(render,0)});
+    $("scrub").onclick=render;style.onchange=()=>source.value&&render();
     $("clear").onclick=()=>{source.value="";current=[];count();output.textContent="Your de-identified text will appear here.";output.className="output empty";copy.disabled=true;findings.hidden=true;$("summary").textContent="Ready to scan";source.focus()};
     $("example").onclick=()=>{source.value="Patient Jane Morrison was seen on 04/17/2025.\\nDOB: 08/22/1981\\nMRN: A184-9921\\nAddress: 742 Evergreen Avenue, Boston, MA 02118\\nPhone: (617) 555-0142\\nEmail: jane.morrison@example.com\\n\\nDr. Samuel Reed requested follow-up.";count();render()};
     copy.onclick=async()=>{try{await navigator.clipboard.writeText(redact(source.value,current,style.value));copy.textContent="Copied";setTimeout(()=>copy.textContent="Copy",1400)}catch{copy.textContent="Select text to copy"}};
