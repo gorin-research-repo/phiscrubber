@@ -1,47 +1,54 @@
 # PHI Scrubber
 
-A private, browser-based assistant for finding and removing protected health information from
-clinical text. Detection happens entirely on the device: there is no backend, telemetry, external
-model, or network request.
+A private, browser-based tool for finding and removing protected health information from clinical
+text. Detection happens entirely on the device: there is no backend, telemetry, external model, or
+network request of any kind.
 
-## Single-file version
+## Use it
 
-Download `phi-scrubber.html` and open it directly in any modern browser. All styling and detection
-logic is embedded in that one file, so it works in airplane mode without a server or build step.
-Opening `index.html` also routes to this standalone build; it will not attempt to load browser
-modules that are blocked by the security rules for local `file://` pages.
+Download `phi-scrubber.html` and open it in any modern browser. Everything—styling, recognizers, and
+UI—is inlined in that one file, so it works in airplane mode with no server, install, or build step.
+Text is scrubbed automatically as you type or paste; the Scrub PHI button forces a rescan.
 
-## Run locally
+## Develop
 
-Python 3 is the only runtime needed:
+`phi-scrubber.html` is generated, so edit the sources rather than the built file:
 
-```bash
-npm start
-```
-
-Open [http://localhost:8080](http://localhost:8080). After the first load, the service worker caches
-the app so it remains available offline. For a strict airplane-mode workflow, load it once, turn off
-the network, and keep the browser data for this origin.
-
-Tests use Node's built-in test runner:
+- `src/detector.js` — recognizers and redaction, covered by the tests
+- `src/ui.js`, `src/ui.css`, `src/template.html` — interface
+- `scripts/build.mjs` — inlines the above into `phi-scrubber.html`
 
 ```bash
-npm test
+npm run build   # regenerate phi-scrubber.html
+npm test        # build, then run the test suite
+npm start       # build and serve on http://localhost:8080
 ```
+
+The test suite fails if `phi-scrubber.html` is out of date with the sources or if it ever references
+an external resource, which keeps the shipped file both current and fully offline.
 
 ## Detection
 
-The recognizer pipeline is inspired by Microsoft Presidio's pattern, score, context, and overlap
-model. It detects common names in clinical context, dates, phone numbers, email addresses, SSNs,
-medical record and account identifiers, street addresses, ZIP codes, IP addresses, and URLs.
+The pipeline follows Microsoft Presidio's model of independent recognizers that each return a
+confidence score, with context checks and overlap resolution across the results. It covers names,
+locations, dates, ages over 89, phone numbers, email addresses, SSNs, medical record and account
+identifiers, street addresses, ZIP codes, IP addresses, and URLs.
 
-Microsoft Presidio itself is a Python service and cannot run natively in a browser without shipping
-a Python runtime and NLP models. This implementation preserves the local-only requirement with a
-small JavaScript recognizer layer instead. The recognizers are in `src/detector.js` and can be
-extended independently.
+Names use layered evidence rather than a single pattern:
+
+- titles and clinical roles, such as `Dr. Samuel Reed` or `Emergency contact: ...`
+- a first-name gazetteer, including common non-Anglo names
+- general capitalized name sequences, filtered against a clinical stopword list
+- initials, generational suffixes, hyphenated names, and particles such as `de la` or `van`
+- uppercase roster formatting such as `MORRISON, JANE`
+
+Presidio itself is a Python service and cannot run natively in a browser without shipping a Python
+runtime and NLP models, which would break the offline, single-file requirement. This implementation
+keeps Presidio's recognizer structure in JavaScript instead. Without a statistical model, unusual
+names carry lower confidence than gazetteer or context matches, so review remains important.
 
 ## Safety
 
 Automated de-identification is imperfect. This app is an aid, not a HIPAA compliance certification.
-Review output before sharing it, especially names without titles or clinical context, uncommon
-identifier formats, free-form locations, ages, and organization names.
+Review output before sharing it, especially for uncommon names, free-form locations, organization
+names, and unusual identifier formats.
