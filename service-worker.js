@@ -2,6 +2,7 @@ const CACHE_NAME = "phi-scrubber-v1";
 const APP_FILES = [
   "./",
   "./index.html",
+  "./phi-scrubber.html",
   "./styles.css",
   "./src/app.js",
   "./src/detector.js",

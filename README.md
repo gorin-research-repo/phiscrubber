@@ -8,6 +8,8 @@ model, or network request.
 
 Download `phi-scrubber.html` and open it directly in any modern browser. All styling and detection
 logic is embedded in that one file, so it works in airplane mode without a server or build step.
+Opening `index.html` also routes to this standalone build; it will not attempt to load browser
+modules that are blocked by the security rules for local `file://` pages.
 
 ## Run locally
 
