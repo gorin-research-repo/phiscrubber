@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Detect and remove protected health information locally in your browser."
+    />
+    <meta name="theme-color" content="#f4f7f5" />
+    <title>PHI Scrubber — Private, local de-identification</title>
+    <link rel="stylesheet" href="./styles.css" />
+    <link rel="manifest" href="./manifest.webmanifest" />
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="#" aria-label="PHI Scrubber home">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 24 24"><path d="M12 2 4.5 5v6.2c0 4.8 3.2 9.2 7.5 10.8 4.3-1.6 7.5-6 7.5-10.8V5L12 2Zm3.7 8.2-4.4 4.4a1 1 0 0 1-1.4 0l-2-2 1.4-1.4 1.3 1.3 3.7-3.7 1.4 1.4Z"/></svg>
+        </span>
+        <span>PHI Scrubber</span>
+      </a>
+      <div class="offline-badge"><span></span> Local only</div>
+    </header>
+
+    <main>
+      <section class="hero">
+        <p class="eyebrow">Private by design</p>
+        <h1>Remove sensitive health information <em>before it leaves your hands.</em></h1>
+        <p class="hero-copy">
+          Paste clinical text below. Detection and redaction happen entirely in this browser—your
+          data is never uploaded or stored.
+        </p>
+      </section>
+
+      <section class="workspace" aria-label="PHI scrubbing workspace">
+        <div class="panel input-panel">
+          <div class="panel-heading">
+            <div>
+              <span class="step">01</span>
+              <h2>Original text</h2>
+            </div>
+            <button id="clearButton" class="text-button" type="button">Clear</button>
+          </div>
+          <textarea
+            id="sourceText"
+            spellcheck="false"
+            aria-label="Original text containing PHI"
+            placeholder="Paste a clinical note, message, or document here…"
+          ></textarea>
+          <div class="panel-footer">
+            <span id="charCount">0 characters</span>
+            <button id="exampleButton" class="text-button" type="button">Try an example</button>
+          </div>
+        </div>
+
+        <div class="action-column">
+          <button id="scrubButton" class="primary-button" type="button">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 3 1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9L12 3Zm7 12 1 2.5 2.5 1L20 20l-1 2.5-1-2.5-2.5-1 2.5-1 1-2.5Z"/></svg>
+            Scrub PHI
+          </button>
+          <span class="shortcut">⌘ / Ctrl + Enter</span>
+        </div>
+
+        <div class="panel output-panel">
+          <div class="panel-heading">
+            <div>
+              <span class="step">02</span>
+              <h2>Scrubbed text</h2>
+            </div>
+            <button id="copyButton" class="text-button" type="button" disabled>Copy</button>
+          </div>
+          <div id="outputText" class="output empty" tabindex="0" aria-live="polite">
+            <div class="empty-state">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3h8v2h3v16H5V5h3V3Zm2 2v2h4V5h-4Zm-3 2v12h10V7h-1v2H8V7H7Z"/></svg>
+              <p>Your de-identified text will appear here.</p>
+            </div>
+          </div>
+          <div class="panel-footer result-footer">
+            <span id="resultSummary">Ready to scan</span>
+            <label>
+              Replace with
+              <select id="replacementStyle">
+                <option value="label">Type labels</option>
+                <option value="token">Numbered tokens</option>
+                <option value="mask">Solid masks</option>
+              </select>
+            </label>
+          </div>
+        </div>
+      </section>
+
+      <section id="findings" class="findings" hidden>
+        <div class="findings-heading">
+          <h2>Detected identifiers</h2>
+          <span id="findingCount"></span>
+        </div>
+        <div id="findingChips" class="chips"></div>
+      </section>
+
+      <section class="trust-grid">
+        <article>
+          <span class="feature-icon">↯</span>
+          <h3>Works offline</h3>
+          <p>After the first local load, the app is cached and works without a network connection.</p>
+        </article>
+        <article>
+          <span class="feature-icon">⌂</span>
+          <h3>Stays on your device</h3>
+          <p>No analytics, accounts, databases, API calls, or external resources.</p>
+        </article>
+        <article>
+          <span class="feature-icon">◎</span>
+          <h3>Presidio-inspired</h3>
+          <p>Modular recognizers detect common HIPAA identifiers with confidence scores and context.</p>
+        </article>
+      </section>
+
+      <aside class="notice">
+        <strong>Review before sharing.</strong>
+        Automated detection can miss PHI or flag non-PHI. This tool assists de-identification; it
+        does not certify HIPAA compliance.
+      </aside>
+    </main>
+
+    <footer>
+      <span>PHI Scrubber</span>
+      <span>Zero data leaves this browser.</span>
+    </footer>
+    <script type="module" src="./src/app.js"></script>
+  </body>
+</html>
