@@ -4,6 +4,11 @@ A private, browser-based assistant for finding and removing protected health inf
 clinical text. Detection happens entirely on the device: there is no backend, telemetry, external
 model, or network request.
 
+## Single-file version
+
+Download `phi-scrubber.html` and open it directly in any modern browser. All styling and detection
+logic is embedded in that one file, so it works in airplane mode without a server or build step.
+
 ## Run locally
 
 Python 3 is the only runtime needed:
