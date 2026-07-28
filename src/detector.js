@@ -68,8 +68,8 @@ const DEFINITIONS = [
 ];
 
 const NAME_PATTERNS = [
-  /\b(?:patient|member|name|provider|physician|doctor|dr\.?|nurse|signed by|attending)(?:\s+(?:is|was|:))?\s+([A-Z][a-z]+(?:[-'][A-Z]?[a-z]+)?(?:\s+[A-Z]\.?)?\s+[A-Z][a-z]+(?:[-'][A-Z]?[a-z]+)?)/g,
-  /\b(?:Mr|Mrs|Ms|Miss|Dr)\.?\s+([A-Z][a-z]+(?:[-'][A-Z]?[a-z]+)?(?:\s+[A-Z][a-z]+(?:[-'][A-Z]?[a-z]+)?)+)/g,
+  /\b(?:patient|member|name|provider|physician|doctor|dr\.?|nurse|signed by|attending)(?:\s+(?:is|was|:))?\s+([A-Z][a-z]+(?:[-'][A-Z]?[a-z]+)?(?:\s+[A-Z]\.?)?\s+[A-Z][a-z]+(?:[-'][A-Z]?[a-z]+)?)/gi,
+  /\b(?:Mr|Mrs|Ms|Miss|Dr)\.?\s+([A-Z][a-z]+(?:[-'][A-Z]?[a-z]+)?(?:\s+[A-Z][a-z]+(?:[-'][A-Z]?[a-z]+)?)+)/gi,
 ];
 
 function addMatch(results, match, definition, start = match.index, value = match[0]) {
@@ -109,6 +109,7 @@ export function detectPhi(text) {
     regex.lastIndex = 0;
     for (const match of text.matchAll(regex)) {
       const value = match[1];
+      if (!value.split(/\s+/).every((part) => /^[A-Z]/.test(part))) continue;
       const start = match.index + match[0].lastIndexOf(value);
       addMatch(results, match, { type: "PERSON", label: "Person", score: 0.82 }, start, value);
     }
