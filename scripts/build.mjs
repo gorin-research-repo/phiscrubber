@@ -19,9 +19,11 @@ export async function buildStandalone() {
     throw new Error("Inlined script would terminate the HTML script element early.");
   }
 
+  // Replacer functions keep "$" sequences in the sources from being read as
+  // replacement patterns, which would splice unrelated text into the output.
   return template
-    .replace("/* {{CSS}} */", css.trim())
-    .replace("/* {{SCRIPT}} */", script.trim());
+    .replace("/* {{CSS}} */", () => css.trim())
+    .replace("/* {{SCRIPT}} */", () => script.trim());
 }
 
 const invokedDirectly = process.argv[1] === fileURLToPath(import.meta.url);
