@@ -92,7 +92,12 @@ footer{padding:22px max(20px,6vw);border-top:1px solid #18332d18;display:flex;ju
   <footer><span>PHI Scrubber</span><span>Zero data leaves this browser.</span></footer>
   <script>
 const MONTH =
-  "(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:tember)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)";
+  "(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:t(?:ember)?)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)";
+// "May" also works as a verb, so it is only read as a month with a date nearby.
+const MONTH_UNAMBIGUOUS = MONTH.replace("|May", "");
+const WEEKDAY = "(?:Mon|Tues?|Wednes|Thurs?|Fri|Satur|Sun)day";
+const COUNT = "(?:\\d{1,3}|a|an|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|several|few|couple(?:\\s+of)?)";
+const UNIT = "(?:day|week|weekend|month|year|decade)s?";
 
 const DEFINITIONS = [
   {
@@ -128,17 +133,49 @@ const DEFINITIONS = [
   {
     type: "DATE",
     label: "Date",
-    score: 0.86,
+    score: 0.9,
     regex: new RegExp(
-      `\\b(?:${MONTH}\\s+\\d{1,2}(?:st|nd|rd|th)?(?:,?\\s+\\d{2,4})?|\\d{1,2}\\s+${MONTH}(?:\\s+\\d{2,4})?|\\d{1,2}[/-]\\d{1,2}[/-]\\d{2,4})\\b`,
+      `\\b(?:${MONTH}\\s+\\d{1,2}(?:st|nd|rd|th)?(?:,?\\s+\\d{2,4})?|\\d{1,2}(?:st|nd|rd|th)?\\s+(?:of\\s+)?${MONTH}(?:,?\\s+\\d{2,4})?|\\d{1,2}[/-]\\d{1,2}[/-]\\d{2,4})\\b`,
+      "gi",
+    ),
+  },
+  {
+    // A bare year is permitted, but pairing it with a month is not.
+    type: "DATE",
+    label: "Date",
+    score: 0.87,
+    regex: new RegExp(`\\b(?:${MONTH}\\s+(?:of\\s+)?\\d{4}|\\d{1,2}[/-]\\d{4})\\b`, "gi"),
+  },
+  {
+    type: "DATE",
+    label: "Date",
+    score: 0.7,
+    regex: new RegExp(`\\b(?:${MONTH_UNAMBIGUOUS}|${WEEKDAY})\\b`, "g"),
+  },
+  {
+    type: "DATE",
+    label: "Date",
+    score: 0.72,
+    regex: /\b(?:in|of|during|since|until|through|by|early|late|mid)\s+(May)\b/g,
+    group: 1,
+  },
+  {
+    // Relative expressions still pin a record to a point in time.
+    type: "DATE",
+    label: "Date",
+    score: 0.8,
+    regex: new RegExp(
+      `\\b(?:today|tonight|yesterday|tomorrow|(?:this|last|next|past|coming|following|previous)\\s+(?:morning|afternoon|evening|night|${UNIT}|${WEEKDAY})|${COUNT}\\s+${UNIT}(?:\\s+(?:ago|earlier|later|prior|from\\s+now))|(?:in|within|over)\\s+${COUNT}\\s+${UNIT})\\b`,
       "gi",
     ),
   },
   {
     type: "AGE",
-    label: "Age over 89",
-    score: 0.9,
-    regex: /\b(?:9\d|1\d{2})[\s-]?(?:year|yr)s?[\s-]?old\b|\bage(?:d)?\s*(?:of\s*)?(?:9\d|1\d{2})\b/gi,
+    label: "Age",
+    score: 0.92,
+    // The trailing period belongs to "y.o." but not to "y/o" at the end of a sentence.
+    regex:
+      /\b\d{1,3}\s*[-\s]?\s*(?:years?|yrs?)[-\s]?\s*old\b|\b\d{1,3}\s*[-\s]?\s*(?:y\.\s*o\.?|y\s*\/\s*o|yo)(?![a-z])|\bage[ds]?\s*(?:of\s*)?:?\s*\d{1,3}\b/gi,
   },
   {
     type: "MEDICAL_RECORD",
@@ -423,10 +460,13 @@ function detectPhi(text) {
 
   for (const definition of DEFINITIONS) {
     collect(text, definition.regex, (match) => {
-      const start = match.index;
-      const end = start + match[0].length;
-      if (definition.type === "ZIP_CODE" && !validZipContext(text, start, end)) return;
-      addMatch(results, definition.type, definition.label, definition.score, start, match[0]);
+      const value = definition.group ? match[definition.group] : match[0];
+      if (!value) return;
+      const start = match.index + (definition.group ? match[0].indexOf(value) : 0);
+      if (definition.type === "ZIP_CODE" && !validZipContext(text, start, start + value.length)) {
+        return;
+      }
+      addMatch(results, definition.type, definition.label, definition.score, start, value);
     });
   }
 

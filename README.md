@@ -31,8 +31,20 @@ an external resource, which keeps the shipped file both current and fully offlin
 
 The pipeline follows Microsoft Presidio's model of independent recognizers that each return a
 confidence score, with context checks and overlap resolution across the results. It covers names,
-locations, dates, ages over 89, phone numbers, email addresses, SSNs, medical record and account
+locations, dates, ages, phone numbers, email addresses, SSNs, medical record and account
 identifiers, street addresses, ZIP codes, IP addresses, and URLs.
+
+Ages are redacted whenever a number is attached to `year-old`, `years old`, `yo`, `y.o.`, `y/o`, or
+an explicit `age` label, regardless of the value.
+
+Dates follow the HIPAA rule that a year on its own is acceptable but anything more precise is not:
+
+- `1981` on its own is kept, while `March 2019` and `08/2020` are redacted
+- calendar dates, standalone month names, and weekday names are redacted
+- relative references that anchor a record in time are redacted, including `today`, `yesterday`,
+  `tomorrow`, `last month`, `this year`, `next Tuesday`, `two weeks ago`, and `in three months`
+- `May` is only read as a month when a date or preposition supports it, so `may proceed` is kept
+- durations that do not point at a date, such as `for 7 days`, are kept
 
 Names use layered evidence rather than a single pattern:
 

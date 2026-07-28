@@ -15,14 +15,14 @@ test("detects common clinical identifiers", () => {
 });
 
 test("detects names introduced by a title or clinical role", () => {
-  assert.equal(scrub("Seen by Dr. Samuel Reed today."), "Seen by Dr. [PERSON] today.");
+  assert.equal(scrub("Seen by Dr. Samuel Reed."), "Seen by Dr. [PERSON].");
   assert.equal(scrub("Emergency contact: Yolanda Whitfield-Barnes"), "Emergency contact: [PERSON]");
   assert.equal(scrub("Name: Tomasz Wisniewski"), "Name: [PERSON]");
 });
 
 test("detects names in plain prose without a trigger word", () => {
   assert.equal(scrub("Kwame Osei-Bonsu reviewed the chart."), "[PERSON] reviewed the chart.");
-  assert.equal(scrub("Contacted Sarah McDonald yesterday."), "Contacted [PERSON] yesterday.");
+  assert.equal(scrub("Contacted Sarah McDonald again."), "Contacted [PERSON] again.");
 });
 
 test("keeps whole names together across initials, suffixes, and particles", () => {
@@ -50,13 +50,34 @@ test("uses surrounding context before treating five digits as ZIP code", () => {
   assert.equal(detectPhi("ZIP: 12345")[0].type, "ZIP_CODE");
 });
 
-test("flags ages over 89", () => {
+test("flags any age written with year-old, yo, or y.o.", () => {
   assert.equal(scrub("The patient is 94 years old."), "The patient is [AGE].");
-  assert.equal(scrub("The patient is 62 years old."), "The patient is 62 years old.");
+  assert.equal(scrub("A 45-year-old male."), "A [AGE] male.");
+  assert.equal(scrub("Seen: 62 yo, 7 y.o., 3 y/o."), "Seen: [AGE], [AGE], [AGE].");
+  assert.equal(scrub("Age: 38"), "[AGE]");
+});
+
+test("allows a bare year but not a month with a year", () => {
+  assert.equal(scrub("Born in 1981 and graduated 2003."), "Born in 1981 and graduated 2003.");
+  assert.equal(scrub("Surgery in March 2019."), "Surgery in [DATE].");
+  assert.equal(scrub("Surgery in 08/2020."), "Surgery in [DATE].");
+});
+
+test("treats relative time references as dates", () => {
+  assert.equal(scrub("Follow up today."), "Follow up [DATE].");
+  assert.equal(scrub("Seen yesterday, returning tomorrow."), "Seen [DATE], returning [DATE].");
+  assert.equal(scrub("Admitted last month and again this year."), "Admitted [DATE] and again [DATE].");
+  assert.equal(scrub("Started two weeks ago."), "Started [DATE].");
+  assert.equal(scrub("Recheck in three months."), "Recheck [DATE].");
+  assert.equal(scrub("Returns next Tuesday."), "Returns [DATE].");
+});
+
+test("keeps full numeric dates intact rather than splitting off a month and year", () => {
+  assert.equal(scrub("Seen on 04/17/2025."), "Seen on [DATE].");
 });
 
 test("scrubs without changing surrounding content", () => {
-  assert.equal(scrub("Email alice@example.com today."), "Email [EMAIL] today.");
+  assert.equal(scrub("Email alice@example.com now."), "Email [EMAIL] now.");
 });
 
 test("supports numbered and masked replacements", () => {
