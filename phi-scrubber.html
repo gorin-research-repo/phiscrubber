@@ -1,0 +1,715 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>PHI Scrubber — Offline</title>
+  <style>
+:root{--ink:#18332d;--muted:#63736e;--green:#176b57;--dark:#0f5444;--mint:#dff1e9;--cream:#f6f7f2;--line:#dce4df}
+*{box-sizing:border-box}
+body{margin:0;color:var(--ink);background:radial-gradient(circle at 18% 5%,#ceebdf88,transparent 28rem),var(--cream);font-family:Inter,system-ui,sans-serif}
+button,textarea,select{font:inherit}
+.header{height:68px;padding:0 max(20px,6vw);border-bottom:1px solid #18332d18;display:flex;align-items:center;justify-content:space-between}
+.brand{display:flex;align-items:center;gap:10px;font-weight:800}
+.shield{display:grid;place-items:center;width:34px;height:34px;border-radius:10px;color:white;background:var(--green)}
+.local{font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--green)}
+.local:before{content:"";display:inline-block;width:8px;height:8px;margin-right:9px;border-radius:50%;background:#28a278;box-shadow:0 0 0 4px #28a27822}
+main{width:min(1120px,calc(100% - 32px));margin:auto}
+.hero{max-width:810px;margin:64px auto 44px;text-align:center}
+.eyebrow{color:var(--green);font-size:12px;font-weight:800;letter-spacing:.16em;text-transform:uppercase}
+h1{margin:11px 0 17px;font:500 clamp(40px,5.2vw,68px)/1.03 Georgia,serif;letter-spacing:-.04em}
+h1 em{color:var(--green);font-weight:inherit}
+.sub{max-width:650px;margin:auto;color:var(--muted);line-height:1.7}
+.workspace{display:grid;grid-template-columns:1fr 104px 1fr;align-items:center}
+.panel{min-width:0;overflow:hidden;border:1px solid var(--line);border-radius:17px;background:white;box-shadow:0 18px 50px #193b3214}
+.panel-head,.panel-foot{padding:16px 19px;display:flex;align-items:center;justify-content:space-between}
+.panel-head{border-bottom:1px solid var(--line)}
+.panel-head div{display:flex;gap:9px;align-items:center}
+.panel-head h2{margin:0;font-size:15px}
+.step{color:var(--green);font:italic 12px Georgia}
+.link{border:0;padding:4px;color:var(--green);background:none;font-size:12px;font-weight:800;cursor:pointer}
+.link:disabled{color:#9da9a5}
+textarea,.output{display:block;width:100%;height:325px;padding:21px;border:0;outline:0;resize:none;color:#293b36;background:white;font:13px/1.75 ui-monospace,SFMono-Regular,Consolas,monospace}
+textarea::placeholder{color:#9aa7a2}
+.output{overflow:auto;white-space:pre-wrap;overflow-wrap:anywhere}
+.output.empty{display:grid;place-items:center;color:#92a09b;text-align:center;font-family:inherit}
+.output mark{padding:1px 3px;border-radius:4px;color:var(--dark);background:#cdead9;font-weight:700}
+.panel-foot{min-height:55px;border-top:1px solid var(--line);color:var(--muted);background:#fbfcfa;font-size:11px}
+.panel-foot label{display:flex;align-items:center;gap:6px}
+select{max-width:125px;padding:4px;border:1px solid var(--line);border-radius:6px;color:var(--ink);background:white;font-size:11px}
+.action{display:grid;place-items:center;gap:9px}
+.scrub{display:flex;align-items:center;gap:7px;padding:13px 16px;border:4px solid var(--cream);border-radius:12px;color:white;background:var(--green);box-shadow:0 7px 18px #176b573d;font-size:13px;font-weight:800;cursor:pointer}
+.scrub:hover{background:var(--dark)}
+.shortcut{color:#899590;font-size:10px}
+.findings{margin:26px 0;padding:20px 22px;border:1px solid var(--line);border-radius:14px;background:#ffffffaa}
+.findings header{display:flex;justify-content:space-between}
+.findings h2{margin:0;font-size:14px}
+.findings header span{color:var(--muted);font-size:11px}
+.chips{display:flex;flex-wrap:wrap;gap:7px;margin-top:14px}
+.chip{padding:6px 9px;border:1px solid #c9e1d7;border-radius:99px;color:var(--dark);background:#edf7f2;font-size:11px;font-weight:800}
+.features{display:grid;grid-template-columns:repeat(3,1fr);gap:36px;margin:68px 0 45px}
+.features h3{margin:12px 0 6px;font:600 17px Georgia}
+.features p{margin:0;color:var(--muted);font-size:13px;line-height:1.6}
+.icon{display:grid;place-items:center;width:37px;height:37px;border-radius:10px;color:var(--green);background:var(--mint)}
+.notice{margin:0 0 60px;padding:15px 18px;border-left:3px solid #d2a849;color:#746234;background:#fff9e8;font-size:12px;line-height:1.55}
+footer{padding:22px max(20px,6vw);border-top:1px solid #18332d18;display:flex;justify-content:space-between;color:var(--muted);font-size:11px}
+@media(max-width:850px){.workspace{grid-template-columns:1fr}.action{padding:15px}.shortcut{display:none}.features{gap:18px}}
+@media(max-width:600px){.hero{margin:46px auto 32px}.features{grid-template-columns:1fr}.header{padding:0 16px}textarea,.output{height:275px}}
+  </style>
+</head>
+<body>
+  <header class="header">
+    <div class="brand"><span class="shield">&#10003;</span> PHI Scrubber</div>
+    <div class="local">Local only</div>
+  </header>
+  <main>
+    <section class="hero">
+      <div class="eyebrow">Private by design</div>
+      <h1>Remove sensitive health information <em>before it leaves your hands.</em></h1>
+      <p class="sub">Paste clinical text below. Detection and redaction happen entirely in this browser&mdash;your data is never uploaded or stored.</p>
+    </section>
+    <section class="workspace">
+      <div class="panel">
+        <div class="panel-head"><div><span class="step">01</span><h2>Original text</h2></div><button class="link" id="clear" type="button">Clear</button></div>
+        <textarea id="source" spellcheck="false" placeholder="Paste a clinical note, message, or document here&hellip;"></textarea>
+        <div class="panel-foot"><span id="chars">0 characters</span><button class="link" id="example" type="button">Try an example</button></div>
+      </div>
+      <div class="action"><button class="scrub" id="scrub" type="button">&#10022; Scrub PHI</button><span class="shortcut">Ctrl / &#8984; + Enter</span></div>
+      <div class="panel">
+        <div class="panel-head"><div><span class="step">02</span><h2>Scrubbed text</h2></div><button class="link" id="copy" type="button" disabled>Copy</button></div>
+        <div class="output empty" id="output" aria-live="polite">Your de-identified text will appear here.</div>
+        <div class="panel-foot"><span id="summary">Ready to scan</span><label>Replace with <select id="style"><option value="label">Type labels</option><option value="token">Numbered tokens</option><option value="mask">Solid masks</option></select></label></div>
+      </div>
+    </section>
+    <section class="findings" id="findings" hidden><header><h2>Detected identifiers</h2><span id="total"></span></header><div class="chips" id="chips"></div></section>
+    <section class="features">
+      <article><span class="icon">&#8623;</span><h3>Works offline</h3><p>This single file works without a network connection, server, install, or build step.</p></article>
+      <article><span class="icon">&#8962;</span><h3>Stays on your device</h3><p>No analytics, accounts, databases, API calls, or external resources.</p></article>
+      <article><span class="icon">&#9678;</span><h3>Presidio-inspired</h3><p>Layered recognizers detect names, places, and other HIPAA identifiers using context and confidence.</p></article>
+    </section>
+    <aside class="notice"><strong>Review before sharing.</strong> Automated detection can miss PHI or flag non-PHI. This tool assists de-identification; it does not certify HIPAA compliance.</aside>
+  </main>
+  <footer><span>PHI Scrubber</span><span>Zero data leaves this browser.</span></footer>
+  <script>
+const MONTH =
+  "(?:Jan(?:uary)?|Feb(?:ruary)?|Mar(?:ch)?|Apr(?:il)?|May|Jun(?:e)?|Jul(?:y)?|Aug(?:ust)?|Sep(?:t(?:ember)?)?|Oct(?:ober)?|Nov(?:ember)?|Dec(?:ember)?)";
+// "May" also works as a verb, so it is only read as a month with a date nearby.
+const MONTH_UNAMBIGUOUS = MONTH.replace("|May", "");
+const WEEKDAY = "(?:Mon|Tues?|Wednes|Thurs?|Fri|Satur|Sun)day";
+const COUNT = "(?:\\d{1,3}|a|an|one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|several|few|couple(?:\\s+of)?)";
+const UNIT = "(?:day|week|weekend|month|year|decade)s?";
+
+const DEFINITIONS = [
+  {
+    type: "EMAIL",
+    label: "Email",
+    score: 0.99,
+    regex: /\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}\b/gi,
+  },
+  {
+    type: "SSN",
+    label: "SSN",
+    score: 0.99,
+    regex: /\b(?!000|666|9\d\d)\d{3}[- ]?(?!00)\d{2}[- ]?(?!0000)\d{4}\b/g,
+  },
+  {
+    type: "PHONE",
+    label: "Phone",
+    score: 0.93,
+    regex: /(?<!\w)(?:\+?1[\s.-]?)?(?:\(\d{3}\)|\d{3})[\s.-]\d{3}[\s.-]\d{4}(?!\w)/g,
+  },
+  {
+    type: "IP_ADDRESS",
+    label: "IP address",
+    score: 0.98,
+    regex: /\b(?:(?:25[0-5]|2[0-4]\d|1?\d?\d)\.){3}(?:25[0-5]|2[0-4]\d|1?\d?\d)\b/g,
+  },
+  {
+    type: "URL",
+    label: "URL",
+    score: 0.92,
+    regex: /\bhttps?:\/\/[^\s<>"']+/gi,
+  },
+  {
+    type: "DATE",
+    label: "Date",
+    score: 0.9,
+    regex: new RegExp(
+      `\\b(?:${MONTH}\\s+\\d{1,2}(?:st|nd|rd|th)?(?:,?\\s+\\d{2,4})?|\\d{1,2}(?:st|nd|rd|th)?\\s+(?:of\\s+)?${MONTH}(?:,?\\s+\\d{2,4})?|\\d{1,2}[/-]\\d{1,2}[/-]\\d{2,4})\\b`,
+      "gi",
+    ),
+  },
+  {
+    // A bare year is permitted, but pairing it with a month is not.
+    type: "DATE",
+    label: "Date",
+    score: 0.87,
+    regex: new RegExp(`\\b(?:${MONTH}\\s+(?:of\\s+)?\\d{4}|\\d{1,2}[/-]\\d{4})\\b`, "gi"),
+  },
+  {
+    type: "DATE",
+    label: "Date",
+    score: 0.7,
+    regex: new RegExp(`\\b(?:${MONTH_UNAMBIGUOUS}|${WEEKDAY})\\b`, "g"),
+  },
+  {
+    type: "DATE",
+    label: "Date",
+    score: 0.72,
+    regex: /\b(?:in|of|during|since|until|through|by|early|late|mid)\s+(May)\b/g,
+    group: 1,
+  },
+  {
+    // Relative expressions still pin a record to a point in time.
+    type: "DATE",
+    label: "Date",
+    score: 0.8,
+    regex: new RegExp(
+      `\\b(?:today|tonight|yesterday|tomorrow|(?:this|last|next|past|coming|following|previous)\\s+(?:morning|afternoon|evening|night|${UNIT}|${WEEKDAY})|${COUNT}\\s+${UNIT}(?:\\s+(?:ago|earlier|later|prior|from\\s+now))|(?:in|within|over)\\s+${COUNT}\\s+${UNIT})\\b`,
+      "gi",
+    ),
+  },
+  {
+    type: "AGE",
+    label: "Age",
+    score: 0.92,
+    // The trailing period belongs to "y.o." but not to "y/o" at the end of a sentence.
+    regex:
+      /\b\d{1,3}\s*[-\s]?\s*(?:years?|yrs?)[-\s]?\s*old\b|\b\d{1,3}\s*[-\s]?\s*(?:y\.\s*o\.?|y\s*\/\s*o|yo)(?![a-z])|\bage[ds]?\s*(?:of\s*)?:?\s*\d{1,3}\b/gi,
+  },
+  {
+    type: "MEDICAL_RECORD",
+    label: "Medical record",
+    score: 0.96,
+    regex: /\b(?:MRN|medical record|patient id|chart)(?:\s*(?:number|no\.?|#|:))?\s*[A-Z0-9][A-Z0-9-]{3,}\b/gi,
+  },
+  {
+    type: "ACCOUNT",
+    label: "Account",
+    score: 0.9,
+    regex: /\b(?:account|member|beneficiary|claim|policy)(?:\s*(?:number|no\.?|#|id|:))?\s*[A-Z0-9][A-Z0-9-]{4,}\b/gi,
+  },
+  {
+    type: "ADDRESS",
+    label: "Address",
+    score: 0.91,
+    regex:
+      /\b\d{1,6}[ \t]+(?:[A-Z][A-Za-z0-9.'-]*[ \t]+){0,4}(?:Street|St|Avenue|Ave|Road|Rd|Boulevard|Blvd|Lane|Ln|Drive|Dr|Court|Ct|Parkway|Pkwy|Highway|Hwy|Way|Terrace|Place|Circle|Cir)\.?(?![a-z])(?:[ \t]*(?:Apt|Unit|Suite|Ste|#)[ \t]*[A-Z0-9-]+)?/g,
+  },
+  {
+    type: "ZIP_CODE",
+    label: "ZIP code",
+    score: 0.75,
+    regex: /\b\d{5}(?:-\d{4})?\b/g,
+  },
+];
+
+const words = (value) => new Set(value.trim().split(/\s+/));
+
+// Capitalized words that routinely appear in clinical text but are not names.
+const STOPWORDS = words(`
+  a an and or but if then than that this these those there here with without within
+  the his her him she he they them we you your our its it is was were are be been being
+  i as at by for from in into of on to up over under about after before during while
+  january february march april may june july august september october november december
+  jan feb mar apr jun jul aug sep sept oct nov dec
+  monday tuesday wednesday thursday friday saturday sunday today tomorrow yesterday
+  patient patients client resident member subscriber insured guarantor
+  doctor dr doctors physician physicians provider providers nurse nursing rn np pa md do
+  hospital clinic center centre medical health healthcare care unit ward room bed floor
+  department dept emergency urgent primary secondary specialty surgery surgical general
+  university memorial regional community saint st mount mt valley county state national
+  chief complaint history present illness past family social review systems physical exam
+  examination assessment plan impression diagnosis diagnoses differential treatment
+  discharge admission admitted discharged summary note notes progress consult consultation
+  follow followup up return visit appointment scheduled schedule referral referred
+  blood pressure heart rate pulse temperature respiratory oxygen saturation weight height
+  chest abdomen abdominal back neck head eyes ears nose throat skin extremities neuro
+  pain fever cough nausea vomiting diarrhea fatigue swelling shortness breath
+  labs lab laboratory results result test tests imaging xray ray ct mri ultrasound ekg ecg
+  normal abnormal negative positive stable improved worsening unchanged within limits
+  medication medications meds allergy allergies allergic reaction dose dosage daily twice
+  mg ml mcg units tablet tablets capsule injection oral iv po prn
+  no yes none denies reports states continue continued start started stop stopped
+  left right bilateral upper lower anterior posterior mild moderate severe acute chronic
+  signed electronically dictated transcribed reviewed approved sincerely regards thank thanks
+  date time name address phone email fax number id record chart account policy claim group
+  male female age years year old dob sex gender race ethnicity language marital status
+  insurance medicare medicaid coverage copay deductible authorization
+  next of kin spouse mother father son daughter brother sister parent guardian contact
+  attention re cc subject page total please note important confidential
+`);
+
+const FIRST_NAMES = words(`
+  james robert john michael david william richard joseph thomas christopher charles daniel
+  matthew anthony donald steven andrew paul joshua kenneth kevin brian george timothy ronald
+  jason edward jeffrey ryan jacob gary nicholas eric jonathan stephen larry justin scott
+  brandon benjamin samuel gregory alexander patrick jack dennis jerry tyler aaron jose adam
+  nathan henry zachary douglas peter kyle noah ethan jeremy walter christian keith roger
+  terry austin sean gerald carl harold dylan arthur lawrence jordan jesse bryan billy bruce
+  gabriel logan albert willie alan juan wayne elijah randy vincent ralph eugene russell louis
+  philip johnny bobby mason caleb ivan owen luke isaac oliver liam lucas jayden mateo levi
+  julian aiden wyatt asher leo micah ezra theodore hudson nolan carter easton cooper jaxon
+  mary patricia jennifer linda elizabeth barbara susan jessica sarah karen nancy lisa betty
+  margaret sandra ashley kimberly emily donna michelle carol amanda dorothy melissa deborah
+  stephanie rebecca sharon laura cynthia kathleen amy angela shirley anna brenda pamela emma
+  nicole helen samantha katherine christine debra rachel carolyn janet catherine maria heather
+  diane ruth julie olivia joyce virginia victoria kelly lauren christina joan evelyn judith
+  megan andrea cheryl hannah jacqueline martha gloria teresa ann sara madison alexis kayla
+  abigail sophia isabella charlotte amelia harper evelyn avery ella scarlett grace chloe
+  lily zoey nora riley aria audrey brooklyn savannah claire skylar lucy paisley everly anna
+  caroline nova genesis emilia kennedy maya willow kinsley naomi aaliyah elena sarah ariana
+  allison gabriella alice madelyn cora ruby eva serenity autumn adeline hailey gianna valentina
+  carlos luis miguel jorge ricardo eduardo fernando alejandro rafael manuel roberto pedro
+  hector oscar sergio andres pablo diego javier raul marco antonio francisco alberto
+  ana sofia lucia carmen elena rosa isabel laura marta cristina beatriz veronica alejandra
+  wei ming li chen jing yan hui lin feng ping xin hao yu jun mei fang
+  mohammed ahmed ali hassan omar khalid ibrahim yusuf amir farah layla noor zainab fatima
+  aisha mariam hana sana rania dina nadia leila samir tariq karim rashid
+  priya raj amit anil sunil vikram arjun rohit ravi deepak sanjay ashok kiran neha pooja
+  anita sunita kavita meera divya shreya ananya aditya rahul manish nikhil
+  yuki hiro kenji takashi haruto sota ren aoi sakura yui hana rin mio akira satoshi
+  ivan dmitri sergei vladimir mikhail alexei nikolai andrei pavel oleg natasha olga irina
+  svetlana tatiana ekaterina anastasia
+  kwame kofi amara chidi ngozi obi zuri thabo sipho nia asha jomo tendai chipo folake
+  ade bola tunde yemi segun femi adaeze uche ifeoma emeka
+`);
+
+// Names that double as ordinary words: only trusted with supporting context.
+const AMBIGUOUS_NAMES = words(`
+  may march april june august mark bill will grace faith hope joy art rich frank dawn rose
+  sunny miles chase drew sky summer autumn winter carol norman curt guy max buddy ray jack
+  pat van don bob sue jean amber crystal ruby pearl iris olive ginger sandy wade cliff dale
+  glen brook forest heath lane reed reid bell cole stone rusty penny hazel daisy ivy holly
+  jo ann sky angel christian earnest bee ken lee owen young long tan white brown green
+`);
+
+const CITIES = words(`
+  boston cambridge worcester springfield providence hartford stamford bridgeport newark
+  trenton philadelphia pittsburgh baltimore richmond norfolk raleigh durham charlotte
+  greensboro columbia charleston savannah atlanta jacksonville orlando tampa miami
+  nashville memphis knoxville louisville lexington cincinnati cleveland columbus toledo
+  detroit lansing chicago rockford peoria milwaukee madison minneapolis duluth
+  indianapolis fort wayne louis kansas wichita omaha lincoln oklahoma tulsa dallas
+  houston austin antonio paso arlington denver colorado boulder aurora albuquerque
+  phoenix tucson mesa scottsdale vegas reno salt provo boise spokane seattle tacoma
+  portland eugene sacramento francisco oakland jose fresno bakersfield angeles diego
+  anaheim riverside honolulu anchorage juneau billings fargo sioux rapid buffalo rochester
+  syracuse albany yonkers jersey paterson wilmington dover manchester nashua burlington
+  portland bangor allentown scranton erie akron dayton evansville jackson mobile birmingham
+  huntsville montgomery shreveport baton orleans little rock springdale
+`);
+
+const STATE_NAMES = words(`
+  alabama alaska arizona arkansas california colorado connecticut delaware florida georgia
+  hawaii idaho illinois indiana iowa kansas kentucky louisiana maine maryland massachusetts
+  michigan minnesota mississippi missouri montana nebraska nevada hampshire jersey mexico
+  york carolina dakota ohio oklahoma oregon pennsylvania rhode island tennessee texas utah
+  vermont virginia washington wisconsin wyoming
+`);
+
+const STATE_CODES =
+  "AL|AK|AZ|AR|CA|CO|CT|DE|FL|GA|HI|ID|IL|IN|IA|KS|KY|LA|ME|MD|MA|MI|MN|MS|MO|MT|NE|NV|NH|NJ|NM|NY|NC|ND|OH|OK|OR|PA|RI|SC|SD|TN|TX|UT|VT|VA|WA|WV|WI|WY|DC";
+
+const S = "[ \\t]";
+// Allows internal capitals and separators seen in names such as O'Connell, McDonald, Osei-Bonsu.
+const TOKEN = "[A-Z][a-z]*[A-Z]?[a-z]+(?:['\u2019-][A-Z]?[a-z]+)*";
+const INITIAL = "[A-Z]\\.";
+const SUFFIX = "(?:Jr|Sr|III|IV|II)\\.?";
+const PARTICLE = "(?:de|del|des|dos|das|da|di|du|van|von|der|den|ter|la|le|el|bin|ibn|al|abu)";
+// Matches either capitalization without a case-insensitive flag, which would also
+// let the name patterns match lowercase words.
+const anyCase = (pattern) => pattern.replace(/[a-z]/g, (letter) => `[${letter}${letter.toUpperCase()}]`);
+
+const TITLE = "(?:Mr|Mrs|Ms|Miss|Mx|Dr|Doctor|Prof|Professor|Nurse|Rev|Capt|Sgt|Sir|Dame)";
+const TRIGGER =
+  "(?:patient|client|resident|member|subscriber|insured|guarantor|name|provider|physician|doctor|nurse|surgeon|therapist|caregiver|attending|admitting|referring|consulting|pcp|signed(?:\\s+by)?|dictated(?:\\s+by)?|seen(?:\\s+by)?|examined(?:\\s+by)?|treated(?:\\s+by)?|spouse|mother|father|son|daughter|brother|sister|parent|guardian|emergency\\s+contact|next\\s+of\\s+kin|witness|contact)";
+
+const PARTICLE_PART = `(?:${S}+${PARTICLE})*`;
+const NAME_BODY = `${TOKEN}(?:${S}+${INITIAL})?(?:${PARTICLE_PART}${S}+${TOKEN}){0,3}(?:${S}+${SUFFIX}\\b)?`;
+const FULL_NAME = `${TOKEN}(?:${S}+${INITIAL})?${PARTICLE_PART}${S}+${TOKEN}${PARTICLE_PART}(?:${S}+${TOKEN})?(?:${S}+${SUFFIX}\\b)?`;
+
+const NAME_RULES = [
+  {
+    score: 0.95,
+    regex: new RegExp(`\\b${TITLE}\\.?${S}+(${NAME_BODY})`, "g"),
+  },
+  {
+    score: 0.93,
+    regex: new RegExp(
+      `\\b${anyCase(TRIGGER)}\\b(?:${S}+${anyCase("(?:is|was|are|were)")})?${S}*[:\\-]?${S}+(${NAME_BODY})`,
+      "g",
+    ),
+  },
+  {
+    score: 0.88,
+    regex: new RegExp(`\\b(${TOKEN},${S}+${TOKEN}(?:${S}+${INITIAL})?)`, "g"),
+    reversed: true,
+    requireKnownName: true,
+  },
+  {
+    score: 0.84,
+    regex: new RegExp(`\\b(${FULL_NAME})`, "g"),
+    requireKnownName: true,
+  },
+  {
+    score: 0.6,
+    regex: new RegExp(`\\b(${FULL_NAME})`, "g"),
+  },
+  {
+    score: 0.55,
+    regex: new RegExp(`\\b(${TOKEN})\\b`, "g"),
+    requireKnownName: true,
+    singleToken: true,
+  },
+  {
+    // Uppercase roster style used by many record systems, such as "MORRISON, JANE".
+    score: 0.8,
+    regex: new RegExp(`\\b([A-Z]{2,}(?:-[A-Z]{2,})?,${S}+[A-Z]{2,}(?:${S}+[A-Z]\\.)?)`, "g"),
+    uppercase: true,
+  },
+];
+
+const LOCATION_RULES = [
+  {
+    score: 0.93,
+    regex: new RegExp(`\\b(${TOKEN}(?:${S}+${TOKEN})?),${S}*(?:${STATE_CODES})\\b`, "g"),
+    stateCode: true,
+  },
+  {
+    score: 0.72,
+    regex: new RegExp(`\\b(${TOKEN}(?:${S}+${TOKEN})?)\\b`, "g"),
+    knownPlaceOnly: true,
+  },
+  {
+    score: 0.7,
+    regex: new RegExp(`\\b(${TOKEN})\\b`, "g"),
+    knownPlaceOnly: true,
+  },
+];
+
+const normalize = (value) => value.replace(/[.,]/g, "").toLowerCase();
+
+function isStopword(token) {
+  return STOPWORDS.has(normalize(token));
+}
+
+function isKnownFirstName(token) {
+  return FIRST_NAMES.has(normalize(token));
+}
+
+function isKnownPlace(value) {
+  const parts = value.split(/\s+/).map(normalize);
+  const whole = parts.join(" ");
+  if (STATE_NAMES.has(whole) || CITIES.has(whole)) return true;
+  return parts.every((part) => STATE_NAMES.has(part) || CITIES.has(part));
+}
+
+function looksLikeName(value, { requireKnownName, singleToken, uppercase, reversed }) {
+  const tokens = value.split(/[\s,]+/).filter(Boolean);
+  if (!tokens.length) return false;
+  if (tokens.some((token) => isStopword(token))) return false;
+
+  const isParticle = (token) => new RegExp(`^${PARTICLE}$`).test(normalize(token));
+  if (!uppercase && tokens.some((token) => !/^[A-Z]/.test(token) && !isParticle(token))) return false;
+
+  const nameTokens = tokens.filter(
+    (token) =>
+      !/^[A-Z]\.?$/.test(token) && !/^(?:Jr|Sr|II|III|IV)\.?$/i.test(token) && !isParticle(token),
+  );
+  if (!nameTokens.length) return false;
+
+  if (singleToken) {
+    return isKnownFirstName(value) && !AMBIGUOUS_NAMES.has(normalize(value));
+  }
+  if (requireKnownName) {
+    const candidates = reversed ? nameTokens.slice(1) : nameTokens;
+    return candidates.some((token) => isKnownFirstName(token));
+  }
+  return nameTokens.every((token) => token.length > 1 || /^[A-Z]\.?$/.test(token));
+}
+
+function collect(text, regex, handler) {
+  regex.lastIndex = 0;
+  let match;
+  while ((match = regex.exec(text)) !== null) {
+    const resumeAt = handler(match);
+    if (typeof resumeAt === "number" && resumeAt > match.index && resumeAt < regex.lastIndex) {
+      regex.lastIndex = resumeAt;
+    }
+    if (match[0] === "") regex.lastIndex += 1;
+  }
+}
+
+function startsSentence(text, index) {
+  return /(?:^|[.!?\n\r]|^\s*[-*\u2022])\s*$/.test(text.slice(0, index));
+}
+
+function addMatch(results, type, label, score, start, value) {
+  results.push({ type, label, score, start, end: start + value.length, text: value });
+}
+
+function validZipContext(text, start, end) {
+  const nearby = text.slice(Math.max(0, start - 28), Math.min(text.length, end + 12));
+  return /\b(?:zip|postal|address|,\s*[A-Z]{2}\s*)/i.test(nearby);
+}
+
+function detectPhi(text) {
+  if (!text) return [];
+  const results = [];
+
+  for (const definition of DEFINITIONS) {
+    collect(text, definition.regex, (match) => {
+      const value = definition.group ? match[definition.group] : match[0];
+      if (!value) return;
+      const start = match.index + (definition.group ? match[0].indexOf(value) : 0);
+      if (definition.type === "ZIP_CODE" && !validZipContext(text, start, start + value.length)) {
+        return;
+      }
+      addMatch(results, definition.type, definition.label, definition.score, start, value);
+    });
+  }
+
+  for (const rule of LOCATION_RULES) {
+    collect(text, rule.regex, (match) => {
+      const value = match[1];
+      if (value.split(/\s+/).some((token) => isStopword(token))) return;
+      if (rule.knownPlaceOnly && !isKnownPlace(value)) return;
+      // "Al-Rashid, MD" is a credential, not a city and state, unless a ZIP or known city agrees.
+      if (
+        rule.stateCode &&
+        !isKnownPlace(value) &&
+        !/^[\s,]*\d{5}(?:-\d{4})?\b/.test(text.slice(match.index + match[0].length))
+      ) {
+        return;
+      }
+      const start = match.index + match[0].indexOf(value);
+      addMatch(results, "LOCATION", "Location", rule.score, start, value);
+    });
+  }
+
+  for (const rule of NAME_RULES) {
+    collect(text, rule.regex, (match) => {
+      const value = match[1].replace(/\s+$/, "");
+      const start = match.index + match[0].lastIndexOf(value);
+      const [firstToken] = value.split(/\s+/);
+
+      // A capitalized word opening a sentence is usually ordinary prose, so resume
+      // scanning after it rather than absorbing the real name that follows. A title or
+      // trigger word ahead of the candidate is evidence enough to keep it.
+      const hasContextPrefix = value !== match[0];
+      if (
+        !rule.uppercase &&
+        !hasContextPrefix &&
+        startsSentence(text, start) &&
+        !isKnownFirstName(firstToken)
+      ) {
+        return start + firstToken.length;
+      }
+      if (!looksLikeName(value, rule)) return;
+      if (!rule.uppercase && isKnownPlace(value)) return;
+      addMatch(results, "PERSON", "Person", rule.score, start, value);
+    });
+  }
+
+  return removeOverlaps(results);
+}
+
+function removeOverlaps(results) {
+  const preferred = [...results].sort(
+    (a, b) => b.score - a.score || b.end - b.start - (a.end - a.start) || a.start - b.start,
+  );
+  const accepted = [];
+  for (const candidate of preferred) {
+    if (!accepted.some((item) => candidate.start < item.end && candidate.end > item.start)) {
+      accepted.push(candidate);
+    }
+  }
+  return accepted.sort((a, b) => a.start - b.start);
+}
+
+function scrubText(text, entities, style = "label") {
+  const counters = {};
+  let cursor = 0;
+  let output = "";
+
+  for (const entity of entities) {
+    output += text.slice(cursor, entity.start);
+    counters[entity.type] = (counters[entity.type] || 0) + 1;
+    if (style === "mask") {
+      output += "█".repeat(Math.max(4, entity.text.length));
+    } else if (style === "token") {
+      output += `<${entity.type}_${counters[entity.type]}>`;
+    } else {
+      output += `[${entity.type}]`;
+    }
+    cursor = entity.end;
+  }
+  return output + text.slice(cursor);
+}
+
+const byId = (id) => document.getElementById(id);
+const source = byId("source");
+const output = byId("output");
+const copyButton = byId("copy");
+const styleSelect = byId("style");
+const findings = byId("findings");
+
+const EXAMPLE = [
+  "Patient Jane Morrison was seen on 04/17/2025 by Dr. Samuel Reed.",
+  "DOB: 08/22/1981",
+  "MRN: A184-9921",
+  "Address: 742 Evergreen Avenue, Boston, MA 02118",
+  "Phone: (617) 555-0142",
+  "Email: jane.morrison@example.com",
+  "",
+  "Emergency contact: Yolanda Whitfield-Barnes (mother).",
+  "Kwame Osei-Bonsu from case management will follow up next week.",
+].join("\n");
+
+let entities = [];
+let scanTimer = null;
+
+function updateCharacterCount() {
+  const total = source.value.length;
+  byId("chars").textContent = total.toLocaleString() + (total === 1 ? " character" : " characters");
+}
+
+function renderOutput(scrubbed) {
+  output.className = "output";
+  output.textContent = "";
+  // Highlights each replacement without ever using innerHTML on user text.
+  const pattern = /\[[A-Z_]+\]|<[A-Z_]+_\d+>|█+/g;
+  let cursor = 0;
+  let match;
+  while ((match = pattern.exec(scrubbed)) !== null) {
+    if (match.index > cursor) {
+      output.appendChild(document.createTextNode(scrubbed.slice(cursor, match.index)));
+    }
+    const mark = document.createElement("mark");
+    mark.textContent = match[0];
+    output.appendChild(mark);
+    cursor = match.index + match[0].length;
+  }
+  output.appendChild(document.createTextNode(scrubbed.slice(cursor)));
+}
+
+function renderFindings() {
+  const grouped = {};
+  entities.forEach((entity) => {
+    grouped[entity.label] = (grouped[entity.label] || 0) + 1;
+  });
+
+  const chips = byId("chips");
+  while (chips.firstChild) chips.removeChild(chips.firstChild);
+  Object.keys(grouped).forEach((label) => {
+    const chip = document.createElement("span");
+    chip.className = "chip";
+    chip.textContent = label + " \u00b7 " + grouped[label];
+    chips.appendChild(chip);
+  });
+
+  findings.hidden = entities.length === 0;
+  byId("total").textContent = entities.length + " total";
+}
+
+function scrub() {
+  const text = source.value;
+  entities = detectPhi(text);
+
+  if (!text) {
+    reset();
+    return;
+  }
+
+  renderOutput(scrubText(text, entities, styleSelect.value));
+  renderFindings();
+  copyButton.disabled = false;
+  byId("summary").textContent = entities.length
+    ? entities.length + (entities.length === 1 ? " identifier scrubbed" : " identifiers scrubbed")
+    : "No identifiers detected";
+}
+
+function reset() {
+  entities = [];
+  output.className = "output empty";
+  output.textContent = "Your de-identified text will appear here.";
+  copyButton.disabled = true;
+  findings.hidden = true;
+  byId("summary").textContent = "Ready to scan";
+}
+
+function scheduleScrub(delay) {
+  window.clearTimeout(scanTimer);
+  scanTimer = window.setTimeout(scrub, delay);
+}
+
+source.addEventListener("input", function () {
+  updateCharacterCount();
+  scheduleScrub(180);
+});
+
+source.addEventListener("paste", function () {
+  scheduleScrub(0);
+});
+
+byId("scrub").onclick = scrub;
+styleSelect.onchange = scrub;
+
+byId("clear").onclick = function () {
+  source.value = "";
+  updateCharacterCount();
+  reset();
+  source.focus();
+};
+
+byId("example").onclick = function () {
+  source.value = EXAMPLE;
+  updateCharacterCount();
+  scrub();
+};
+
+copyButton.onclick = function () {
+  const text = scrubText(source.value, entities, styleSelect.value);
+  const done = function (label) {
+    copyButton.textContent = label;
+    window.setTimeout(function () {
+      copyButton.textContent = "Copy";
+    }, 1400);
+  };
+
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(
+      function () {
+        done("Copied");
+      },
+      function () {
+        done("Copy blocked");
+      },
+    );
+    return;
+  }
+
+  const helper = document.createElement("textarea");
+  helper.value = text;
+  document.body.appendChild(helper);
+  helper.select();
+  try {
+    done(document.execCommand("copy") ? "Copied" : "Copy blocked");
+  } catch (error) {
+    done("Copy blocked");
+  }
+  document.body.removeChild(helper);
+};
+
+document.addEventListener("keydown", function (event) {
+  if ((event.ctrlKey || event.metaKey) && event.key === "Enter") {
+    event.preventDefault();
+    scrub();
+  }
+});
+
+updateCharacterCount();
+  </script>
+</body>
+</html>
