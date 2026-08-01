@@ -1,4 +1,13 @@
-# PHI Scrubber
+# AugmentedMD Tools
+
+Tools for doctors navigating the post-AI digital world, developed by Dr. Michael Gorin.
+
+## Sites
+
+- **AugmentedMD** (`augmentedmd.html`) — Landing page showcasing all available tools
+- **PHI Scrubber** (`phi-scrubber.html`) — Private, browser-based tool for finding and removing protected health information from clinical text
+
+## PHI Scrubber
 
 A private, browser-based tool for finding and removing protected health information from clinical
 text. Detection happens entirely on the device: there is no backend, telemetry, external model, or
