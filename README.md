@@ -1,13 +1,22 @@
-# AugmentedMD Tools
+# AugmentedMD
 
-Tools for doctors navigating the post-AI digital world, developed by Dr. Michael Gorin.
+Open-source tools for doctors navigating the post-AI digital world.
 
-## Sites
+**Created by Michael Gorin, MD** — Academic urologist at Mount Sinai focusing on use of technologies (AI-based and conventional) to improve patient safety, operational efficiency, and physician effectiveness.
 
-- **AugmentedMD** (`augmentedmd.html`) — Landing page showcasing all available tools
-- **PHI Scrubber** (`phi-scrubber.html`) — Private, browser-based tool for finding and removing protected health information from clinical text
+## About This Repository
 
-## PHI Scrubber
+This repository contains open-source clinical tools that are **free for anyone to use, modify, or improve upon**. All tools prioritize patient privacy, clinical validity, and practical integration into clinical workflows.
+
+## Available Tools
+
+### AugmentedMD Landing Page
+**File:** `augmentedmd.html`  
+Main landing page showcasing all available tools with descriptions and links.
+
+### PHI Scrubber
+**File:** `phi-scrubber.html`  
+**Status:** Available Now
 
 A private, browser-based tool for finding and removing protected health information from clinical
 text. Detection happens entirely on the device: there is no backend, telemetry, external model, or
@@ -73,3 +82,19 @@ names carry lower confidence than gazetteer or context matches, so review remain
 Automated de-identification is imperfect. This app is an aid, not a HIPAA compliance certification.
 Review output before sharing it, especially for uncommon names, free-form locations, organization
 names, and unusual identifier formats.
+
+## Contributing
+
+Contributions are welcome! Feel free to:
+- Report issues or suggest improvements
+- Fork this repository and submit pull requests
+- Use these tools as a foundation for your own projects
+
+## License
+
+Open source and free to use. See individual tool files for specific implementation details.
+
+## Contact
+
+- GitHub: [@gorin-research-repo](https://github.com/gorin-research-repo)
+- Twitter: [@michael_gorin](https://twitter.com/michael_gorin) / [@AugmentedMD](https://twitter.com/AugmentedMD)
